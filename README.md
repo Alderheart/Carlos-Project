@@ -6,7 +6,8 @@ One command does it all:
 
 1. **Dumps all text** in the PDF with its position (`[x,y] text`), in the same pixel coordinates as the rendered image.
 2. **Renders each page** to a PNG.
-3. **Sends the image plus the positioned text** to Claude and gets back structured JSON (room, dimensions as written, width/length in decimal feet, area, whether it was labeled or estimated, confidence).
+3. **Sends the image plus the positioned text** to Claude and gets back structured JSON: room name, dimensions as written, width/length in decimal feet, position (x/y in feet from the building's top-left corner), area, whether it was labeled or estimated, and confidence.
+4. **Rebuilds the floor plan from that JSON** as an SVG (one rectangle per room) and writes a side-by-side page comparing it with the original.
 
 ## Setup
 
@@ -30,6 +31,8 @@ Output goes to `out/<pdf name>/`:
 - `text.txt` — every text item with its `[x,y]` position
 - `page-N.png` — what Claude saw
 - `rooms-page-N.json` — Claude's answer
+- `reconstructed-page-N.svg` — the plan redrawn from the JSON only
+- `compare-page-N.html` — original and reconstruction side by side, plus the room table
 
 `samples/test-plan.pdf` is a simple synthetic plan for a smoke test.
 

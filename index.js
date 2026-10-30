@@ -6,6 +6,7 @@ import path from "node:path";
 import { extractText, formatText } from "./src/extract-text.js";
 import { renderPages } from "./src/render.js";
 import { analyzePage, MODEL } from "./src/analyze.js";
+import { toSvg, compareHtml } from "./src/reconstruct.js";
 
 const args = process.argv.slice(2);
 const flag = (name) => args.includes(name);
@@ -52,6 +53,12 @@ for (const [i, png] of images.entries()) {
       conf: r.confidence,
     })),
   );
+  // Step 3: rebuild the plan from the JSON
+  await fs.writeFile(path.join(outDir, `reconstructed-page-${n}.svg`), toSvg(result));
+  await fs.writeFile(
+    path.join(outDir, `compare-page-${n}.html`),
+    compareHtml({ title: `${path.basename(pdfPath)} page ${n}`, pngFile: `page-${n}.png`, svgFile: `reconstructed-page-${n}.svg`, plan: result }),
+  );
   if (result.notes) console.log(`Notes: ${result.notes}`);
-  console.log(`Tokens: ${usage.input_tokens} in / ${usage.output_tokens} out. Saved ${outDir}/rooms-page-${n}.json`);
+  console.log(`Tokens: ${usage.input_tokens} in / ${usage.output_tokens} out. Saved rooms-page-${n}.json, reconstructed-page-${n}.svg, compare-page-${n}.html in ${outDir}`);
 }

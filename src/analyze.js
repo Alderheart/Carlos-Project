@@ -8,8 +8,10 @@ export const MODEL = "claude-opus-5-5";
 const Room = z.object({
   name: z.string().describe("Room name as labeled on the plan, e.g. 'Master Bedroom'"),
   dimensions_as_written: z.string().describe("Dimension text exactly as shown, e.g. 12'-6\" x 14'-0\". Empty if none shown."),
-  width_ft: z.number().nullable().describe("First dimension in decimal feet"),
-  length_ft: z.number().nullable().describe("Second dimension in decimal feet"),
+  width_ft: z.number().describe("Horizontal size on the page, in decimal feet"),
+  length_ft: z.number().describe("Vertical size on the page, in decimal feet"),
+  x_ft: z.number().describe("Left edge of the room, feet from the left edge of the whole building"),
+  y_ft: z.number().describe("Top edge of the room, feet from the top edge of the whole building"),
   area_sqft: z.number().nullable(),
   source: z.enum(["labeled", "estimated"]).describe("labeled = read from a printed dimension; estimated = inferred from scale or neighbouring dimensions"),
   confidence: z.enum(["high", "medium", "low"]),
@@ -29,7 +31,8 @@ Rules:
 - The text positions are [x,y] pixel coordinates in the attached image (origin top-left).
 - Convert feet-inches to decimal feet (12'-6" = 12.5).
 - If a room has no printed dimension, estimate it from the scale or nearby dimension strings, mark source "estimated", and lower the confidence.
-- Include closets, baths, halls, garages, porches, etc.`;
+- Include closets, baths, halls, garages, porches, etc.
+- Also give each room's position (x_ft, y_ft = its top-left corner, measured in feet from the building's top-left corner, as drawn on the page) so the plan can be redrawn from your answer alone. Rooms that share a wall should share that coordinate. Model each room as its bounding rectangle; mention L-shapes etc. in notes.`;
 
 export async function analyzePage({ png, text }) {
   const client = new Anthropic();

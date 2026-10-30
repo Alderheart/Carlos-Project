@@ -24,7 +24,20 @@ node index.js plan.pdf --page 2           # only analyze page 2
 node index.js plan.pdf --text-only        # just dump the text, no API call
 node index.js plan.pdf --no-text          # image only, to compare accuracy without text context
 node index.js plan.pdf --scale 3          # render at higher resolution (default 2)
+node index.js plan.pdf --truth truth.json # also score accuracy against known room sizes
 ```
+
+## Scoring accuracy
+
+Write the real room sizes in a truth file (see `samples/test-plan.truth.json`):
+
+```json
+[{ "name": "Kitchen", "width": "12'-6\"", "length": "10'-0\"" }]
+```
+
+Sizes can be feet-inches text or decimal feet, and width/length order doesn't matter. Rooms are matched by name.
+Pass it with `--truth`, or score an earlier run with `node score.js out/<plan>/rooms-page-1.json truth.json`.
+The report shows each room's worst dimension error in inches, its area error, missing and extra rooms, and a summary.
 
 Output goes to `out/<pdf name>/`:
 
@@ -33,6 +46,7 @@ Output goes to `out/<pdf name>/`:
 - `rooms-page-N.json` — Claude's answer
 - `reconstructed-page-N.svg` — the plan redrawn from the JSON only
 - `compare-page-N.html` — original and reconstruction side by side, plus the room table
+- `score-page-N.json` — accuracy report (only with `--truth`)
 
 `samples/test-plan.pdf` is a simple synthetic plan for a smoke test.
 

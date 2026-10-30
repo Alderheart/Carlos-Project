@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Usage: node index.js <plan.pdf> [--page N] [--scale 2] [--no-text] [--text-only]
+// Usage: node index.js <plan.pdf> [--page N] [--scale 2] [--no-text] [--text-only] [--truth truth.json]
 // Writes everything to out/<pdf name>/ and prints a room table.
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -7,6 +7,7 @@ import { extractText, formatText } from "./src/extract-text.js";
 import { renderPages } from "./src/render.js";
 import { analyzePage, MODEL } from "./src/analyze.js";
 import { toSvg, compareHtml } from "./src/reconstruct.js";
+import { score } from "./src/score.js";
 
 const args = process.argv.slice(2);
 const flag = (name) => args.includes(name);
@@ -18,6 +19,7 @@ if (!pdfPath) {
 }
 const scale = Number(opt("--scale", 2));
 const onlyPage = opt("--page") ? Number(opt("--page")) : null;
+const truth = opt("--truth") ? JSON.parse(await fs.readFile(opt("--truth"), "utf8")) : null;
 const outDir = path.join("out", path.basename(pdfPath, path.extname(pdfPath)));
 await fs.mkdir(outDir, { recursive: true });
 
@@ -60,5 +62,13 @@ for (const [i, png] of images.entries()) {
     compareHtml({ title: `${path.basename(pdfPath)} page ${n}`, pngFile: `page-${n}.png`, svgFile: `reconstructed-page-${n}.svg`, plan: result }),
   );
   if (result.notes) console.log(`Notes: ${result.notes}`);
+  if (truth) {
+    const { rows, extra, summary } = score(result, truth);
+    console.log("\nAccuracy vs truth file:");
+    console.table(rows);
+    if (extra.length) console.log(`Extra rooms from Claude: ${extra.join(", ")}`);
+    console.log(summary);
+    await fs.writeFile(path.join(outDir, `score-page-${n}.json`), JSON.stringify({ summary, rows, extra }, null, 2));
+  }
   console.log(`Tokens: ${usage.input_tokens} in / ${usage.output_tokens} out. Saved rooms-page-${n}.json, reconstructed-page-${n}.svg, compare-page-${n}.html in ${outDir}`);
 }
